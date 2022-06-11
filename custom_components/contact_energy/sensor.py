@@ -113,6 +113,7 @@ class ContactEnergyUsageSensor(Entity):
         self._state = 0
         self._state_attributes = {}
         self._unit_of_measurement = 'kWh'
+        self._unique_id = DOMAIN
         self._state_class = "total"
         self._device_class = "energy"
         self._usage_days = usage_days
@@ -156,7 +157,12 @@ class ContactEnergyUsageSensor(Entity):
     def device_class(self):
         """Return the device class."""
         return self._device_class
-    
+        
+    @property
+    def unique_id(self):
+        """Return the unique id."""
+        return self._unique_id
+        
     def update(self):
         _LOGGER.debug('Checking login validity')
         if self._api.check_auth():
