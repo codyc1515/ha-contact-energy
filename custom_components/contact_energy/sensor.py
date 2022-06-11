@@ -176,46 +176,37 @@ class ContactEnergyUsageSensor(Entity):
             _LOGGER.error('Unable to log in')
 
     def make_attribute(self, date, today, response):
-        #points = response.get('points', None)
         yesterday = today - timedelta(days = 1)
-        hourly_day = today - timedelta(days = self._hourly_offset_days)
         daily_usage = 0.000
         data = {}
-        hourly_data = []
-        for point in response:
-            usage = float(point['value'])
-            
-            '''metadata = StatisticMetaData(
-                has_mean=False,
-                has_sum=True,
-                name="ContactEnergy2",
-                source=DOMAIN,
-                statistic_id=f"{DOMAIN}:energy_consumption",
-                unit_of_measurement=ENERGY_KILO_WATT_HOUR
-            )
-            statistics = StatisticData(
-                start=math.floor(dt_util.as_timestamp(dt_util.as_utc(datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f+12:00')))),
-                sum=point['value']
-            )
-            async_add_external_statistics(self.hass, metadata, statistics)'''
-            
-            if (date == hourly_day):
-                daily_data = {}
-                time = datetime.utcfromtimestamp(point['date'])
-                daily_data['date'] = time.strftime(self._time_format)
-                hourly_day_usage = point['value']
-                daily_data['usage'] = str(hourly_day_usage) if hourly_day_usage != 0 and hourly_day_usage != None else str(0)
-                hourly_data.append(daily_data)
-            if usage != None and usage != 0:
-                daily_usage += usage
-        if daily_usage != 0:
-            data['date'] = date.strftime(self._date_format)
-            data['usage'] = str(daily_usage)
-        if (date == yesterday):
-            self._state = data['usage'] if daily_usage != 0 else 0
-        if (date == hourly_day):
-            if self._show_hourly:
-                self._state_attributes['hourly'] = hourly_data
+        if response[0]:
+            for point in response:
+                if point['value']:
+                    daily_usage += float(point['value']) - float(point['unchargedValue'])
+                    
+                    data['date'] = date.strftime(self._date_format)
+                    data['usage'] = daily_usage
+                    
+                    if (date == yesterday):
+                        self._state = data['usage'] if daily_usage != 0 else 0
+                    
+                    '''metadata = StatisticMetaData(
+                        has_mean=False,
+                        has_sum=True,
+                        name="ContactEnergy2",
+                        source=DOMAIN,
+                        statistic_id=f"{DOMAIN}:energy_consumption",
+                        unit_of_measurement=ENERGY_KILO_WATT_HOUR
+                    )
+                    statistics = StatisticData(
+                        start=math.floor(dt_util.as_timestamp(dt_util.as_utc(datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f+12:00')))),
+                        sum=point['value']
+                    )
+                    async_add_external_statistics(self.hass, metadata, statistics)'''
+            else:
+                _LOGGER.warning('No usage data available for %1', today)                
+        else:
+            _LOGGER.warning('No data available for %1', today)
         return data
 
 '''
