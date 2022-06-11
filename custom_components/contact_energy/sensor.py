@@ -109,7 +109,7 @@ async def async_setup_platform(hass, config, async_add_entities,
 class ContactEnergyUsageSensor(Entity):
     def __init__(self, name, api, usage_days, show_hourly, hourly_offset_days, date_format, time_format):
         self._name = name
-        self._icon = "mdi:power-socket-eu"
+        self._icon = "mdi:meter-electric"
         self._state = 0
         self._state_attributes = {}
         self._unit_of_measurement = 'kWh'
