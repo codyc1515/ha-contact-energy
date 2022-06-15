@@ -8,6 +8,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -106,16 +107,16 @@ async def async_setup_platform(hass, config, async_add_entities,
     #    sensors .append(ContactEnergyPricesSensor(SENSOR_PRICES_NAME, api, date_format))
     async_add_entities(sensors, True)
 
-class ContactEnergyUsageSensor(Entity):
+class ContactEnergyUsageSensor(SensorEntity):
     def __init__(self, name, api, usage_days, show_hourly, hourly_offset_days, date_format, time_format):
         self._name = name
         self._icon = "mdi:meter-electric"
         self._state = 0
-        self._state_attributes = {}
         self._unit_of_measurement = 'kWh'
         self._unique_id = DOMAIN
-        self._state_class = "total"
         self._device_class = "energy"
+        self._state_class = "total"
+        self._state_attributes = {}
         self._usage_days = usage_days
         self._show_hourly = show_hourly
         self._date_format = date_format
