@@ -74,7 +74,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_HOURLY_OFFSET_DAYS, default=1): cv.positive_int,
 })
 
-SCAN_INTERVAL = timedelta(minutes=60)
+SCAN_INTERVAL = timedelta(hours=3)
 
 async def async_setup_platform(hass, config, async_add_entities,
                                discovery_info=None):
