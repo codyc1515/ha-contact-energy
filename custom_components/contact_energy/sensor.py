@@ -194,8 +194,8 @@ class ContactEnergyUsageSensor(SensorEntity):
                     data['date'] = date.strftime(self._date_format)
                     data['usage'] = daily_usage
                     
-                    if (date == yesterday):
-                        self._state = data['usage'] if daily_usage != 0 else 0
+                    if (date == yesterday) and daily_usage != 0:
+                        self._state = data['usage']
                     
                     '''metadata = StatisticMetaData(
                         has_mean=False,
