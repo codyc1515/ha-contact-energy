@@ -29,6 +29,7 @@ class ContactEnergyApi:
             return data
         else:
             _LOGGER.error('Failed to fetch usage data for %s/%s/%s', year, month, day)
+            _LOGGER.error(response);
             return data
 
     def get_facility_id(self):
@@ -38,7 +39,7 @@ class ContactEnergyApi:
         }
         result = requests.post(self._url_base + "/mcfu/profile", headers=headers)
         if result.status_code == requests.codes.ok:
-            _LOGGER.debug('Login is valid')
+            _LOGGER.debug('Retrieved facility id')
             data = result.json()
             self._contract = data['customer']['account']['contracts'][0]['id']
         else:
@@ -46,12 +47,19 @@ class ContactEnergyApi:
 
     def check_auth(self):
         """Check to see if our API Token is valid."""
-        if self._api_token:
-            _LOGGER.debug('Login is valid')
+        _LOGGER.debug('Checking token validity')
+        headers = {
+            "x-api-key": self._api_key,
+            "Authorization": self._api_token
+        }
+        response = requests.post(self._url_base + "/mcfu/profile", headers=headers)
+        if response.status_code == requests.codes.ok:
+            _LOGGER.debug('Token is valid')
             return True
-        else: 
+        else:
+            _LOGGER.info('Token has expired, logging in again...')
             if self.login() == False:
-                _LOGGER.debug(result.text)
+                _LOGGER.error(result.text)
                 return False
             return True
         
@@ -69,9 +77,10 @@ class ContactEnergyApi:
         if loginResult.status_code == requests.codes.ok:
             jsonResult = loginResult.json()
             self._api_token = jsonResult['token']
-            _LOGGER.debug('Successfully logged in')
+            _LOGGER.debug('Logged in')
             self.get_facility_id()
             result = True           
         else:
+            _LOGGER.debug('Failed to login')
             _LOGGER.error(loginResult.text)
         return result

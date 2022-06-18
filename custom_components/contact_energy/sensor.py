@@ -165,7 +165,7 @@ class ContactEnergyUsageSensor(SensorEntity):
         return self._unique_id
         
     def update(self):
-        _LOGGER.debug('Checking login validity')
+        _LOGGER.debug('Beginning usage update')
         if self._api.check_auth():
             # Get todays date
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
