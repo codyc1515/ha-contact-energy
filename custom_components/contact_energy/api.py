@@ -25,7 +25,7 @@ class ContactEnergyApi:
         if response.status_code == requests.codes.ok:
             data = response.json()
             if not data:
-                _LOGGER.warning('Fetched usage data for %s/%s/%s, but got nothing back', year, month, day)
+                _LOGGER.info('Fetched usage data for %s/%s/%s, but got nothing back', year, month, day)
             return data
         else:
             _LOGGER.error('Failed to fetch usage data for %s/%s/%s', year, month, day)
@@ -47,17 +47,24 @@ class ContactEnergyApi:
 
     def check_auth(self):
         """Check to see if our API Token is valid."""
-        _LOGGER.debug('Checking token validity')
-        headers = {
-            "x-api-key": self._api_key,
-            "Authorization": self._api_token
-        }
-        response = requests.post(self._url_base + "/mcfu/profile", headers=headers)
-        if response.status_code == requests.codes.ok:
-            _LOGGER.debug('Token is valid')
-            return True
+        if self._api_token:
+            _LOGGER.debug('Checking token validity')
+            headers = {
+                "x-api-key": self._api_key,
+                "Authorization": self._api_token
+            }
+            response = requests.post(self._url_base + "/mcfu/profile", headers=headers)
+            if response.status_code == requests.codes.ok:
+                _LOGGER.debug('Token is valid')
+                return True
+            else:
+                _LOGGER.info('Token has expired, logging in again...')
+                if self.login() == False:
+                    _LOGGER.error(result.text)
+                    return False
+                return True
         else:
-            _LOGGER.info('Token has expired, logging in again...')
+            _LOGGER.info('First load, logging in...')
             if self.login() == False:
                 _LOGGER.error(result.text)
                 return False
