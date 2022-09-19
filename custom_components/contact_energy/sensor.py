@@ -68,7 +68,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_USAGE_DAYS, default=10): cv.positive_int,
     vol.Optional(CONF_SOLD_MEASURE, default=2): cv.positive_int,
     vol.Optional(CONF_SOLD_DAILY, default=False): cv.boolean,
-    vol.Optional(CONF_DATE_FORMAT, default='%b %d %Y'): cv.string,
+    vol.Optional(CONF_DATE_FORMAT, default='%d %b %Y'): cv.string,
     vol.Optional(CONF_TIME_FORMAT, default='%H:%M'): cv.string,
     vol.Optional(CONF_SHOW_HOURLY, default=False): cv.boolean,
     vol.Optional(CONF_HOURLY_OFFSET_DAYS, default=1): cv.positive_int,
@@ -188,7 +188,7 @@ class ContactEnergyUsageSensor(SensorEntity):
         data = {}
         if response[0]:
             for point in response:
-                if point['value']:
+                if point['value'] and date:
                     daily_usage += float(point['value']) - float(point['unchargedValue'])
                     
                     data['date'] = date.strftime(self._date_format)
@@ -211,9 +211,11 @@ class ContactEnergyUsageSensor(SensorEntity):
                     )
                     async_add_external_statistics(self.hass, metadata, statistics)'''
             else:
-                _LOGGER.warning('No usage data available for %1', today)                
+                _LOGGER.warning('No usage data available for today')
+                # %1', today)
         else:
-            _LOGGER.warning('No data available for %1', today)
+            _LOGGER.warning('No data available for')
+            # %1', today)
         return data
 
 '''
