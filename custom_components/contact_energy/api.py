@@ -60,13 +60,13 @@ class ContactEnergyApi:
             else:
                 _LOGGER.info('Token has expired, logging in again...')
                 if self.login() == False:
-                    _LOGGER.error(result.text)
+                    _LOGGER.error(response.message)
                     return False
                 return True
         else:
             _LOGGER.info('First load, logging in...')
             if self.login() == False:
-                _LOGGER.error(result.text)
+                _LOGGER.error(response.message)
                 return False
             return True
         
