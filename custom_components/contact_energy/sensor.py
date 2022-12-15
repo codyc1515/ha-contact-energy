@@ -13,7 +13,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import ENERGY_KILO_WATT_HOUR, CURRENCY_DOLLAR
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
     clear_statistics,
@@ -24,6 +24,7 @@ from homeassistant.components.recorder.statistics import (
     statistics_during_period,
 )
 import homeassistant.util.dt as dt_util
+import math
 
 from .api import ContactEnergyApi
 
@@ -171,22 +172,69 @@ class ContactEnergyUsageSensor(SensorEntity):
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             _LOGGER.debug('Fetching usage data')
             data = []
+            kWhStatistics = []
+            kWhRunningSum = 0
+            
+            freeKWhStatistics = []
+            freeKWhRunningSum = 0
+            
             for i in range(self._usage_days):
-                previous_day = today - timedelta(days=i)
+                previous_day = today - timedelta(days=self._usage_days - i)
                 response = self._api.get_usage(str(previous_day.year), str(previous_day.month), str(previous_day.day))
                 if response:
+                    if response[0]:
+                        for point in response:
+                            _LOGGER.warning(point)
+                            if point['value']:
+                                if point['offpeakValue'] == '0.00':
+                                    kWhRunningSum = kWhRunningSum + float(point['value'])
+                                else:
+                                    freeKWhRunningSum = freeKWhRunningSum + float(point['value'])
+                                    
+                                freeKWhStatistics.append(StatisticData(
+                                    start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
+                                    sum=freeKWhRunningSum
+                                ))
+                                kWhStatistics.append(StatisticData(
+                                    start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
+                                    sum=kWhRunningSum
+                                ))
+                                
                     usage = self.make_attribute(previous_day, today, response)
                     if usage:
                         data.append(usage)
+            
+            kWhMetadata = StatisticMetaData(
+                has_mean=False,
+                has_sum=True,
+                name="ContactEnergy",
+                source=DOMAIN,
+                statistic_id=f"{DOMAIN}:energy_consumption",
+                unit_of_measurement=ENERGY_KILO_WATT_HOUR
+            )
+            async_add_external_statistics(self.hass, kWhMetadata, kWhStatistics)
+            
+            freeKWHMetadata = StatisticMetaData(
+                has_mean=False,
+                has_sum=True,
+                name="FreeContactEnergy",
+                source=DOMAIN,
+                statistic_id=f"{DOMAIN}:free_energy_consumption",
+                unit_of_measurement=ENERGY_KILO_WATT_HOUR
+            )
+            async_add_external_statistics(self.hass, freeKWHMetadata, freeKWhStatistics)
+            
             self._state_attributes['days'] = data
         else:
             _LOGGER.error('Unable to log in')
-
+            
     def make_attribute(self, date, today, response):
         yesterday = today - timedelta(days = 1)
         daily_usage = 0.000
         data = {}
         if response[0]:
+            
+            priceStatistics = []
             for point in response:
                 if point['value'] and date:
                     daily_usage += float(point['value']) - float(point['unchargedValue'])
@@ -196,23 +244,10 @@ class ContactEnergyUsageSensor(SensorEntity):
                     
                     if (date == yesterday) and daily_usage != 0:
                         self._state = data['usage']
-                    
-                    '''metadata = StatisticMetaData(
-                        has_mean=False,
-                        has_sum=True,
-                        name="ContactEnergy2",
-                        source=DOMAIN,
-                        statistic_id=f"{DOMAIN}:energy_consumption",
-                        unit_of_measurement=ENERGY_KILO_WATT_HOUR
-                    )
-                    statistics = StatisticData(
-                        start=math.floor(dt_util.as_timestamp(dt_util.as_utc(datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f+12:00')))),
-                        sum=point['value']
-                    )
-                    async_add_external_statistics(self.hass, metadata, statistics)'''
             else:
                 _LOGGER.warning('No usage data available for today')
                 # %1', today)
+            
         else:
             _LOGGER.warning('No data available for')
             # %1', today)
