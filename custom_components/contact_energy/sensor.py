@@ -252,64 +252,7 @@ class ContactEnergyUsageSensor(SensorEntity):
             _LOGGER.warning('No data available for')
             # %1', today)
         return data
-
-'''
-class ContactEnergyPricesSensor(Entity):
-    def __init__(self, name, api, date_format):
-        self._name = name
-        self._icon = "mdi:account-cash"
-        self._state = 0
-        self._state_attributes = {}
-        self._unit_of_measurement = 'kr'
-        self._date_format = date_format
-        self._api = api
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return self._icon
-
-    @property
-    def state(self):
-        """Return the state of the device."""
-        return self._state
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the sensor."""
-        return self._state_attributes
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    def update(self):
-        """Update state and attributes."""
-        _LOGGER.debug('Checking jwt validity...')
-        if self._api.check_auth():
-            data = self._api.get_price_data()
-            if data:
-                value = data['current_month']['value'] if data['current_month'] else 0
-                self._state_attributes['current_month_value'] = (value / 100) if value != 0 and value != None else 0
-                for condition in MONITORED_CONDITIONS_DEFAULT:
-                    if condition == 'current_month':
-                        self.make_data_attribute(condition, data.get(condition, None), 'cost_in_kr')
-                    elif condition == 'current_price':
-                        self._state = str(data.get(condition, None) / 100)
-                    else:
-                        self._state_attributes[condition] = data.get(condition, None)
-            spot_price_data = self._api.get_spot_price()
-            if spot_price_data:
-                _LOGGER.debug('Fetching daily prices...')
-                today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                todaysData = []
-                tomorrowsData = []
+    
                 yesterdaysData = []
                 for d in spot_price_data['data']:
                     timestamp = datetime.strptime(spot_price_data['data'][d]['localtime'], '%Y-%m-%d %H:%M')
@@ -327,7 +270,6 @@ class ContactEnergyPricesSensor(Entity):
                 self._state_attributes['previous_day'] = yesterdaysData
         else:
             _LOGGER.error('Unable to log in!')
-
     def make_attribute(self, response, value):
         if response: 
             newPoint = {}
@@ -340,7 +282,6 @@ class ContactEnergyPricesSensor(Entity):
             else:
                 newPoint['price'] = 0
             return newPoint
-
     def make_data_attribute(self, name, response, nameOfPriceAttr):
         if response: 
             points = response.get('points', None)
