@@ -184,7 +184,6 @@ class ContactEnergyUsageSensor(SensorEntity):
                 if response:
                     if response[0]:
                         for point in response:
-                            _LOGGER.warning(point)
                             if point['value']:
                                 if point['offpeakValue'] == '0.00':
                                     kWhRunningSum = kWhRunningSum + float(point['value'])
@@ -245,55 +244,10 @@ class ContactEnergyUsageSensor(SensorEntity):
                     if (date == yesterday) and daily_usage != 0:
                         self._state = data['usage']
             else:
-                _LOGGER.warning('No usage data available for today')
+                _LOGGER.debug('No usage data available for today')
                 # %1', today)
             
         else:
             _LOGGER.warning('No data available for')
             # %1', today)
         return data
-    
-                yesterdaysData = []
-                for d in spot_price_data['data']:
-                    timestamp = datetime.strptime(spot_price_data['data'][d]['localtime'], '%Y-%m-%d %H:%M')
-                    if timestamp.date() == today.date():
-                        if spot_price_data['data'][d]['price'] != None:
-                            todaysData.append(self.make_attribute(spot_price_data, d))
-                    elif timestamp.date() == (today.date() + timedelta(days=1)):
-                        if spot_price_data['data'][d]['price'] != None:
-                            tomorrowsData.append(self.make_attribute(spot_price_data, d))
-                    elif timestamp.date() == (today.date() - timedelta(days=1)):
-                        if spot_price_data['data'][d]['price'] != None:
-                            yesterdaysData.append(self.make_attribute(spot_price_data, d))
-                self._state_attributes['current_day'] = todaysData
-                self._state_attributes['next_day'] = tomorrowsData
-                self._state_attributes['previous_day'] = yesterdaysData
-        else:
-            _LOGGER.error('Unable to log in!')
-    def make_attribute(self, response, value):
-        if response: 
-            newPoint = {}
-            price = response['data'][value]['price']
-            dt_object = datetime.strptime(response['data'][value]['localtime'], '%Y-%m-%d %H:%M')
-            newPoint['date'] = dt_object.strftime(self._date_format)
-            newPoint['time'] = dt_object.strftime("%H:%M")
-            if price != None:
-                newPoint['price'] = str(price / 1000)
-            else:
-                newPoint['price'] = 0
-            return newPoint
-    def make_data_attribute(self, name, response, nameOfPriceAttr):
-        if response: 
-            points = response.get('points', None)
-            data = []
-            for point in points:
-                price = point[nameOfPriceAttr]
-                if price != None:
-                    newPoint = {}
-                    dt_object = datetime.utcfromtimestamp(point['timestamp'])
-                    newPoint['date'] = dt_object.strftime(self._date_format)
-                    newPoint['time'] = dt_object.strftime("%H:%M")
-                    newPoint['price'] = str(price / 100)
-                    data.append(newPoint)
-            self._state_attributes[name] = data
-'''
