@@ -17,10 +17,10 @@ from homeassistant.const import ENERGY_KILO_WATT_HOUR, CURRENCY_DOLLAR
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
     clear_statistics,
-    day_start_end,
+    #day_start_end,
     get_last_statistics,
     list_statistic_ids,
-    month_start_end,
+    #month_start_end,
     statistics_during_period,
 )
 import homeassistant.util.dt as dt_util
