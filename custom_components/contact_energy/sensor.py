@@ -174,7 +174,7 @@ class ContactEnergyUsageSensor(SensorEntity):
             kWhMetadata = StatisticMetaData(
                 has_mean=False,
                 has_sum=True,
-                name="ContactEnergy",
+                name="Contact Energy - Import (Paid)",
                 source=DOMAIN,
                 statistic_id=f"{DOMAIN}:energy_consumption",
                 unit_of_measurement=ENERGY_KILO_WATT_HOUR
@@ -184,7 +184,7 @@ class ContactEnergyUsageSensor(SensorEntity):
             freeKWHMetadata = StatisticMetaData(
                 has_mean=False,
                 has_sum=True,
-                name="FreeContactEnergy",
+                name="Contact Energy - Import (Free)",
                 source=DOMAIN,
                 statistic_id=f"{DOMAIN}:free_energy_consumption",
                 unit_of_measurement=ENERGY_KILO_WATT_HOUR
