@@ -138,57 +138,64 @@ class ContactEnergyUsageSensor(SensorEntity):
         
     def update(self):
         _LOGGER.debug('Beginning usage update')
-        if self._api.check_auth():
-            # Get todays date
-            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            _LOGGER.debug('Fetching usage data')
-            
-            kWhStatistics = []
-            kWhRunningSum = 0
-            
-            freeKWhStatistics = []
-            freeKWhRunningSum = 0
-            
-            for i in range(self._usage_days):
-                previous_day = today - timedelta(days=self._usage_days - i)
-                response = self._api.get_usage(str(previous_day.year), str(previous_day.month), str(previous_day.day))
-                if response and response[0]:
-                    for point in response:
-                        if point['value']:
-                            # If the off peak value is '0.00' then the energy is free.
-                            # HASSIO statistics requires us to add values as a sum of all previous values. 
-                            if point['offpeakValue'] == '0.00':
-                                kWhRunningSum = kWhRunningSum + float(point['value'])
-                            else:
-                                freeKWhRunningSum = freeKWhRunningSum + float(point['value'])
-                            
-                            freeKWhStatistics.append(StatisticData(
-                                start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
-                                sum=freeKWhRunningSum
-                            ))
-                            kWhStatistics.append(StatisticData(
-                                start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
-                                sum=kWhRunningSum
-                            ))
 
-            kWhMetadata = StatisticMetaData(
-                has_mean=False,
-                has_sum=True,
-                name="Contact Energy - Import (Paid)",
-                source=DOMAIN,
-                statistic_id=f"{DOMAIN}:energy_consumption",
-                unit_of_measurement=ENERGY_KILO_WATT_HOUR
-            )
-            async_add_external_statistics(self.hass, kWhMetadata, kWhStatistics)
-            
-            freeKWHMetadata = StatisticMetaData(
-                has_mean=False,
-                has_sum=True,
-                name="Contact Energy - Import (Free)",
-                source=DOMAIN,
-                statistic_id=f"{DOMAIN}:free_energy_consumption",
-                unit_of_measurement=ENERGY_KILO_WATT_HOUR
-            )
-            async_add_external_statistics(self.hass, freeKWHMetadata, freeKWhStatistics)
+        # Check to see if our API Token is valid
+        if self._api._api_token:
+            _LOGGER.debug('We appear to be logged in (lets not verify it for now)')
         else:
-            _LOGGER.error('Unable to log in')
+            _LOGGER.info('Havent logged in yet, lets login now...')
+            if self._api.login() == False:
+                _LOGGER.error('Failed to get past login (usage will not be updated) - check the username and password are valid')
+                return False
+    
+        # Get todays date
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        _LOGGER.debug('Fetching usage data')
+        
+        kWhStatistics = []
+        kWhRunningSum = 0
+        
+        freeKWhStatistics = []
+        freeKWhRunningSum = 0
+        
+        for i in range(self._usage_days):
+            previous_day = today - timedelta(days=self._usage_days - i)
+            response = self._api.get_usage(str(previous_day.year), str(previous_day.month), str(previous_day.day))
+            if response and response[0]:
+                for point in response:
+                    if point['value']:
+                        # If the off peak value is '0.00' then the energy is free.
+                        # HASSIO statistics requires us to add values as a sum of all previous values. 
+                        if point['offpeakValue'] == '0.00':
+                            kWhRunningSum = kWhRunningSum + float(point['value'])
+                        else:
+                            freeKWhRunningSum = freeKWhRunningSum + float(point['value'])
+                        
+                        freeKWhStatistics.append(StatisticData(
+                            start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
+                            sum=freeKWhRunningSum
+                        ))
+                        kWhStatistics.append(StatisticData(
+                            start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
+                            sum=kWhRunningSum
+                        ))
+
+        kWhMetadata = StatisticMetaData(
+            has_mean=False,
+            has_sum=True,
+            name="ContactEnergy",
+            source=DOMAIN,
+            statistic_id=f"{DOMAIN}:energy_consumption",
+            unit_of_measurement=ENERGY_KILO_WATT_HOUR
+        )
+        async_add_external_statistics(self.hass, kWhMetadata, kWhStatistics)
+        
+        freeKWHMetadata = StatisticMetaData(
+            has_mean=False,
+            has_sum=True,
+            name="FreeContactEnergy",
+            source=DOMAIN,
+            statistic_id=f"{DOMAIN}:free_energy_consumption",
+            unit_of_measurement=ENERGY_KILO_WATT_HOUR
+        )
+        async_add_external_statistics(self.hass, freeKWHMetadata, freeKWhStatistics)
