@@ -1,11 +1,11 @@
 {
   "domain": "contact_energy",
   "name": "Contact Energy",
-  "version": "1.0.0",
-  "documentation": "https://github.com/codyc1515/hacs_contact_energy",
-  "issue_tracker": "https://github.com/codyc15/hacs_contact_energy/issues",
   "codeowners": ["@codyc1515"],
-  "requirements": [],
+  "dependencies": [],
+  "documentation": "https://github.com/codyc1515/ha-contact-energy",
   "iot_class": "cloud_polling",
-  "dependencies": []
+  "issue_tracker": "https://github.com/codyc15/ha-contact-energy/issues",
+  "requirements": [],
+  "version": "1.0.0"
 }
