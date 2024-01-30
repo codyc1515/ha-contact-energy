@@ -7,11 +7,10 @@ import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, UnitOfEnergy
 from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
 )
@@ -186,7 +185,7 @@ class ContactEnergyUsageSensor(SensorEntity):
             name="ContactEnergy",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:energy_consumption",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, kWhMetadata, kWhStatistics)
 
@@ -196,6 +195,6 @@ class ContactEnergyUsageSensor(SensorEntity):
             name="FreeContactEnergy",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:free_energy_consumption",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, freeKWHMetadata, freeKWhStatistics)
