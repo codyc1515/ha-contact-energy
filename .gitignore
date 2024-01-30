@@ -1,5 +1,17 @@
+# artifacts
+__pycache__
+.pytest*
+*.egg-info
+*/build/*
+*/dist/*
 
-custom_components/countdown/.DS_Store
-custom_components/.DS_Store
-custom_components/contact_energy/.DS_Store
-.DS_Store
+
+# misc
+.coverage
+.vscode
+coverage.xml
+
+
+# Home Assistant configuration
+config/*
+!config/configuration.yaml
