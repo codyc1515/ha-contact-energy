@@ -1,1 +1,1 @@
-"""Support for Contact Energy sensors"""
+"""Support for Contact Energy sensors."""

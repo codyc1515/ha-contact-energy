@@ -1,4 +1,5 @@
-"""Contact Energy sensors"""
+"""Contact Energy sensors."""
+
 from datetime import datetime, timedelta
 
 import logging
@@ -7,43 +8,20 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
-from homeassistant.helpers.entity import Entity
 from homeassistant.components.sensor import SensorEntity
 
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.const import ENERGY_KILO_WATT_HOUR, CURRENCY_DOLLAR
+from homeassistant.const import ENERGY_KILO_WATT_HOUR
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
-    clear_statistics,
-    #day_start_end,
-    get_last_statistics,
-    list_statistic_ids,
-    #month_start_end,
-    statistics_during_period,
 )
-import homeassistant.util.dt as dt_util
-import math
 
 from .api import ContactEnergyApi
 
 from .const import (
     DOMAIN,
     SENSOR_USAGE_NAME,
-    SENSOR_SOLD_NAME,
-    SENSOR_PRICES_NAME,
-    CONF_USAGE,
-    CONF_SOLD,
-    CONF_PRICES,
-    CONF_DATE_FORMAT, 
-    CONF_TIME_FORMAT, 
     CONF_USAGE_DAYS,
-    CONF_SOLD_MEASURE, 
-    CONF_SHOW_HOURLY, 
-    CONF_SOLD_DAILY, 
-    CONF_HOURLY_OFFSET_DAYS,
-    MONITORED_CONDITIONS_DEFAULT
 )
 
 NAME = DOMAIN
@@ -60,35 +38,42 @@ If you have any issues with this you need to open an issue here:
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_EMAIL): cv.string,
-    vol.Required(CONF_PASSWORD): cv.string,
-    vol.Optional(CONF_USAGE_DAYS, default=10): cv.positive_int,
-})
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_EMAIL): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Optional(CONF_USAGE_DAYS, default=10): cv.positive_int,
+    }
+)
 
 SCAN_INTERVAL = timedelta(hours=3)
 
-async def async_setup_platform(hass, config, async_add_entities,
-                               discovery_info=None):
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    """Set up the platform async."""
     email = config.get(CONF_EMAIL)
     password = config.get(CONF_PASSWORD)
-    
+
     usage_days = config.get(CONF_USAGE_DAYS)
-        
+
     api = ContactEnergyApi(email, password)
 
-    _LOGGER.debug('Setting up sensor(s)...')
+    _LOGGER.debug("Setting up sensor(s)...")
 
     sensors = []
     sensors.append(ContactEnergyUsageSensor(SENSOR_USAGE_NAME, api, usage_days))
     async_add_entities(sensors, True)
 
+
 class ContactEnergyUsageSensor(SensorEntity):
+    """Define Contact Energy Usage sensor."""
+
     def __init__(self, name, api, usage_days):
+        """Intialise the sensor."""
         self._name = name
         self._icon = "mdi:meter-electric"
         self._state = 0
-        self._unit_of_measurement = 'kWh'
+        self._unit_of_measurement = "kWh"
         self._unique_id = DOMAIN
         self._device_class = "energy"
         self._state_class = "total"
@@ -120,65 +105,80 @@ class ContactEnergyUsageSensor(SensorEntity):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return self._unit_of_measurement
-    
+
     @property
     def state_class(self):
         """Return the state class."""
         return self._state_class
-    
+
     @property
     def device_class(self):
         """Return the device class."""
         return self._device_class
-        
+
     @property
     def unique_id(self):
         """Return the unique id."""
         return self._unique_id
-        
+
     def update(self):
-        _LOGGER.debug('Beginning usage update')
+        """Begin usage update."""
+        _LOGGER.debug("Beginning usage update")
 
         # Check to see if our API Token is valid
         if self._api._api_token:
-            _LOGGER.debug('We appear to be logged in (lets not verify it for now)')
+            _LOGGER.debug("We appear to be logged in (lets not verify it for now)")
         else:
-            _LOGGER.info('Havent logged in yet, lets login now...')
-            if self._api.login() == False:
-                _LOGGER.error('Failed to get past login (usage will not be updated) - check the username and password are valid')
+            _LOGGER.info("Havent logged in yet, lets login now...")
+            if self._api.login() is False:
+                _LOGGER.error(
+                    "Failed to get past login (usage will not be updated) - check the username and password are valid"
+                )
                 return False
-    
+
         # Get todays date
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        _LOGGER.debug('Fetching usage data')
-        
+        _LOGGER.debug("Fetching usage data")
+
         kWhStatistics = []
         kWhRunningSum = 0
-        
+
         freeKWhStatistics = []
         freeKWhRunningSum = 0
-        
+
         for i in range(self._usage_days):
             previous_day = today - timedelta(days=self._usage_days - i)
-            response = self._api.get_usage(str(previous_day.year), str(previous_day.month), str(previous_day.day))
+            response = self._api.get_usage(
+                str(previous_day.year), str(previous_day.month), str(previous_day.day)
+            )
             if response and response[0]:
                 for point in response:
-                    if point['value']:
+                    if point["value"]:
                         # If the off peak value is '0.00' then the energy is free.
-                        # HASSIO statistics requires us to add values as a sum of all previous values. 
-                        if point['offpeakValue'] == '0.00':
-                            kWhRunningSum = kWhRunningSum + float(point['value'])
+                        # HASSIO statistics requires us to add values as a sum of all previous values.
+                        if point["offpeakValue"] == "0.00":
+                            kWhRunningSum = kWhRunningSum + float(point["value"])
                         else:
-                            freeKWhRunningSum = freeKWhRunningSum + float(point['value'])
-                        
-                        freeKWhStatistics.append(StatisticData(
-                            start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
-                            sum=freeKWhRunningSum
-                        ))
-                        kWhStatistics.append(StatisticData(
-                            start=datetime.strptime(point['date'], '%Y-%m-%dT%H:%M:%S.%f%z'),
-                            sum=kWhRunningSum
-                        ))
+                            freeKWhRunningSum = freeKWhRunningSum + float(
+                                point["value"]
+                            )
+
+                        freeKWhStatistics.append(
+                            StatisticData(
+                                start=datetime.strptime(
+                                    point["date"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                                ),
+                                sum=freeKWhRunningSum,
+                            )
+                        )
+                        kWhStatistics.append(
+                            StatisticData(
+                                start=datetime.strptime(
+                                    point["date"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                                ),
+                                sum=kWhRunningSum,
+                            )
+                        )
 
         kWhMetadata = StatisticMetaData(
             has_mean=False,
@@ -186,16 +186,16 @@ class ContactEnergyUsageSensor(SensorEntity):
             name="ContactEnergy",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:energy_consumption",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR
+            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, kWhMetadata, kWhStatistics)
-        
+
         freeKWHMetadata = StatisticMetaData(
             has_mean=False,
             has_sum=True,
             name="FreeContactEnergy",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:free_energy_consumption",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR
+            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, freeKWHMetadata, freeKWhStatistics)
