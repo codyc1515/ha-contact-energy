@@ -9,7 +9,7 @@
 	],
 	"documentation": "https://github.com/codyc1515/ha-contact-energy",
 	"iot_class": "cloud_polling",
-	"issue_tracker": "https://github.com/codyc15/ha-contact-energy/issues",
+	"issue_tracker": "https://github.com/codyc1515/ha-contact-energy/issues",
 	"requirements": [],
 	"version": "1.0.0"
 }
