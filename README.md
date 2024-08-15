@@ -1,5 +1,5 @@
 # Contact Energy integration for Home Assistant
-View your energy usage.
+View your Contact Energy electricity usage in Home Assistant.
 
 ## Getting started
 In your configuration.yaml file, add the following:
